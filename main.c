@@ -6,6 +6,7 @@
 #include <sys/socket.h>
 #include <stdbool.h>
 #include <time.h>
+#include <sys/sysinfo.h>
 #include <unistd.h>
 
 int main(int argc, const char **argv) {
@@ -34,6 +35,7 @@ int main(int argc, const char **argv) {
 
     int clientLength = sizeof(caddr);
     int i = 0;
+    struct sysinfo info;
     while (true) {
         int clientfd = accept(sockfd, &caddr, &clientLength);
         if (clientfd < 0) {
@@ -42,14 +44,56 @@ int main(int argc, const char **argv) {
         }
 
         char buffer[1000];
+
+        //Used for sending output to client
+        FILE *client = fdopen(clientfd, "r+");
+
+        //Use syscall to read in the option
         read(clientfd, buffer, sizeof buffer);
         int option = atoi(buffer);
+
         if (option == 1) {
-            //sprintf(buffer, "%lu\n", time(NULL));
-            write(clientfd, "Sun Feb 23 16:02:34 UTC 2025\n", 30);
+            fprintf(client, "%lu\n", time(NULL));
+            //write(clientfd, "Sun Feb 23 16:02:34 UTC 2025\n", 30);
         }
+
+        if (option == 2) {
+            sysinfo(&info);
+            fprintf(client, "Uptime: %lu\n", info.uptime);
+        }
+        if (option == 3) {
+            sysinfo(&info);
+            fprintf(client, "Free memory %lu\n", info.freeram);
+        }
+
+        if (option == 4) {
+            FILE *commandOuput = popen("netstat", "r");
+            while (fgets(buffer, 1000, commandOuput) != NULL) {
+                fputs(buffer, client);
+            }
+            pclose(commandOuput);
+        }
+
+        if (option == 5) {
+            FILE *commandOuput = popen("w", "r");
+            while (fgets(buffer, 1000, commandOuput) != NULL) {
+                fputs(buffer, client);
+            }
+            pclose(commandOuput);
+        }
+
+        if (option == 6) {
+            FILE *commandOuput = popen("ps aux", "r");
+            while (fgets(buffer, 1000, commandOuput) != NULL) {
+                fputs(buffer, client);
+            }
+            pclose(commandOuput);
+        }
+
         printf("%d\n", i);
         i++;
+        fclose(client);
+        // Close the client socket
         close(clientfd);
 
     }
