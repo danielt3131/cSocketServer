@@ -5,13 +5,16 @@
 #include <sys/types.h>
 #include <sys/socket.h>
 #include <stdbool.h>
-#include <time.h>
-#include <sys/sysinfo.h>
+#include <pthread.h>
 #include <unistd.h>
+
+#include "server.h"
 
 int main(int argc, const char **argv) {
 
     int sockfd = socket(AF_INET, SOCK_STREAM, 0);
+    int opt = 0;
+    setsockopt(sockfd, SOL_SOCKET, SO_REUSEADDR, &opt, sizeof(opt));
     if (sockfd < 0) {
         perror("Error opening socket");
         return EXIT_FAILURE;
@@ -35,67 +38,22 @@ int main(int argc, const char **argv) {
 
     int clientLength = sizeof(caddr);
     int i = 0;
-    struct sysinfo info;
+    int allocationAmount = 5;
+    pthread_t *threads = malloc(allocationAmount * sizeof(pthread_t));
     while (true) {
         int clientfd = accept(sockfd, &caddr, &clientLength);
         if (clientfd < 0) {
             perror("Connection error");
             return EXIT_FAILURE;
         }
-
-        char buffer[1000];
-
-        //Used for sending output to client
-        FILE *client = fdopen(clientfd, "r+");
-
-        //Use syscall to read in the option
-        read(clientfd, buffer, sizeof buffer);
-        int option = atoi(buffer);
-
-        if (option == 1) {
-            fprintf(client, "%lu\n", time(NULL));
-            //write(clientfd, "Sun Feb 23 16:02:34 UTC 2025\n", 30);
+        if (i == allocationAmount - 1) {
+            puts("Reallocation");
+            allocationAmount *= 2;
+            threads = realloc(threads, allocationAmount * sizeof(pthread_t));
         }
-
-        if (option == 2) {
-            sysinfo(&info);
-            fprintf(client, "Uptime: %lu\n", info.uptime);
-        }
-        if (option == 3) {
-            sysinfo(&info);
-            fprintf(client, "Free memory %lu\n", info.freeram);
-        }
-
-        if (option == 4) {
-            FILE *commandOuput = popen("netstat", "r");
-            while (fgets(buffer, 1000, commandOuput) != NULL) {
-                fputs(buffer, client);
-            }
-            pclose(commandOuput);
-        }
-
-        if (option == 5) {
-            FILE *commandOuput = popen("w", "r");
-            while (fgets(buffer, 1000, commandOuput) != NULL) {
-                fputs(buffer, client);
-            }
-            pclose(commandOuput);
-        }
-
-        if (option == 6) {
-            FILE *commandOuput = popen("ps aux", "r");
-            while (fgets(buffer, 1000, commandOuput) != NULL) {
-                fputs(buffer, client);
-            }
-            pclose(commandOuput);
-        }
-
+        pthread_create(&threads[i], NULL, serverThread, &clientfd);
         printf("%d\n", i);
         i++;
-        fclose(client);
-        // Close the client socket
-        close(clientfd);
-
     }
     return EXIT_SUCCESS;
 }

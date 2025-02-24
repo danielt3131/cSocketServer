@@ -2,11 +2,11 @@ SHELL := /bin/bash
 CC = gcc
 TARGET = server
 CFLAGS = -Wall -Wextra -ggdb -O0
-OBJS = main.o
+OBJS = main.o server.o
 all: $(TARGET)
 
 $(TARGET) : $(OBJS)
-	$(CC) -o $@ $(OBJS)
+	$(CC) -o $@ $(OBJS) -lpthread
 %.o: src/%.c
 	$(CC) $(CFLAGS) -c $<
 clean:
