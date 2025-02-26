@@ -5,7 +5,6 @@
 #include <sys/types.h>
 #include <sys/socket.h>
 #include <stdbool.h>
-#include <pthread.h>
 #include <unistd.h>
 
 #include "server.h"
@@ -38,20 +37,16 @@ int main(int argc, const char **argv) {
 
     int clientLength = sizeof(caddr);
     int i = 0;
-    int allocationAmount = 5;
-    pthread_t *threads = malloc(allocationAmount * sizeof(pthread_t));
     while (true) {
         int clientfd = accept(sockfd, &caddr, &clientLength);
         if (clientfd < 0) {
             perror("Connection error");
             return EXIT_FAILURE;
         }
-        if (i == allocationAmount - 1) {
-            puts("Reallocation");
-            allocationAmount *= 2;
-            threads = realloc(threads, allocationAmount * sizeof(pthread_t));
-        }
-        pthread_create(&threads[i], NULL, serverThread, &clientfd);
+	    int pid = fork();
+        if (pid == 0) {
+		serverThread(clientfd);
+	    }
         printf("%d\n", i);
         i++;
     }

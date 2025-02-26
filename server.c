@@ -6,10 +6,10 @@
 #include <sys/sysinfo.h>
 #include <stdlib.h>
 #include <time.h>
+#include <sys/socket.h>
 
-void* serverThread(void *clientFd) {
+void serverThread(int clientfd) {
     char buffer[1000];
-    int clientfd = *(int *) clientFd;
     struct sysinfo info;
     puts("Connected to client\n");
     //Used for sending output to client
@@ -56,9 +56,14 @@ void* serverThread(void *clientFd) {
         }
         pclose(commandOuput);
     }
-    fclose(client);
+    // Flush the buffer
+    fflush(client);
+
+    shutdown(clientfd, SHUT_WR);    // Send shutdown signal to client
     // Close the client socket
+    fclose(client);
     close(clientfd);
+
     puts("Closed connection\n");
-    pthread_exit(NULL);
+    exit(EXIT_SUCCESS);
 }
