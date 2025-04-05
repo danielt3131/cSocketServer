@@ -1,3 +1,4 @@
+#include <pthread.h>
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
@@ -18,6 +19,7 @@ int main(int argc, const char **argv) {
         perror("Error opening socket");
         return EXIT_FAILURE;
     }
+    //unsigned short port = 2000;
     unsigned short port = atoi(argv[1]);
     struct sockaddr_in saddr, caddr;
 
@@ -37,16 +39,23 @@ int main(int argc, const char **argv) {
 
     int clientLength = sizeof(caddr);
     int i = 0;
+
+    pthread_attr_t t_attr;
+
+    pthread_attr_init(&t_attr);
+    size_t stacksize = 85849014272;
+    pthread_attr_setdetachstate(&t_attr, PTHREAD_CREATE_DETACHED);
+    //pthread_attr_setstacksize(&t_attr, stacksize);
+
     while (true) {
         int clientfd = accept(sockfd, &caddr, &clientLength);
         if (clientfd < 0) {
             perror("Connection error");
             return EXIT_FAILURE;
         }
-	    int pid = fork();
-        if (pid == 0) {
-		serverThread(clientfd);
-	    }
+        void *clientFd = &clientfd;
+        pthread_t thread;
+	    pthread_create(&thread, &t_attr, serverThread, clientFd);
         printf("%d\n", i);
         i++;
     }
