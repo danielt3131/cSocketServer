@@ -1,5 +1,6 @@
 #include "server.h"
 
+#include <errno.h>
 #include <pthread.h>
 #include <stdio.h>
 #include <unistd.h>
@@ -13,8 +14,10 @@
 void* serverThread(void* clientFd) {
     pthread_detach(pthread_self());
     char buffer[BUFFER];
+    printf("ClientFD Address %p\n", clientFd);
     int clientfd = *(int *) clientFd;
-    printf("Client FD: %d\n", clientfd);
+    printf("Thread %lu\n", pthread_self());
+    printf("Client FD2: %d\n", clientfd);
     struct sysinfo info;
     puts("Connected to client\n");
     //Used for sending output to client
@@ -65,12 +68,17 @@ void* serverThread(void* clientFd) {
     // Flush the buffer
     puts("Flushing buffer");
 
-    shutdown(clientfd, SHUT_WR);    // Send shutdown signal to client
+    // Send shutdown signal to client
+    if (shutdown(clientfd, SHUT_WR) < 0) {
+        perror("Unable to send shutdown signal\n");
+        perror(strerror(errno));
+    }
     // Close the client socket
     //fclose(client);
-    //close(clientfd);
+    close(clientfd);
 
     puts("Closed connection\n");
     //exit(EXIT_SUCCESS);
+    free(clientFd);
     pthread_exit(NULL);
 }
