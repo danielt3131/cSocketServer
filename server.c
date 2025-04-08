@@ -14,15 +14,15 @@
 void* serverThread(void* clientFd) {
     pthread_detach(pthread_self());
     char buffer[BUFFER];
-    printf("ClientFD Address %p\n", clientFd);
+    //printf("ClientFD Address %p\n", clientFd);
     int clientfd = *(int *) clientFd;
-    printf("Thread %lu\n", pthread_self());
-    printf("Client FD2: %d\n", clientfd);
+    //printf("Thread %lu\n", pthread_self());
+    //printf("Client FD2: %d\n", clientfd);
     struct sysinfo info;
     puts("Connected to client\n");
     //Used for sending output to client
     //Use syscall to read in the option
-    read(clientfd, buffer, sizeof buffer);
+    read(clientfd, buffer, 4);
     int option = atoi(buffer);
 
     if (option == 1) {

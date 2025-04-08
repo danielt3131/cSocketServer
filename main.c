@@ -16,7 +16,10 @@ int main(int argc, const char **argv) {
 
     int sockfd = socket(AF_INET, SOCK_STREAM, 0);
     int opt = 0;
+    int sendBuf = 10000;
     setsockopt(sockfd, SOL_SOCKET, SO_REUSEADDR, &opt, sizeof(opt));
+    // Increase TCP send buffer
+    setsockopt(sockfd, SOL_SOCKET, SO_SNDBUF, &sendBuf, sizeof(sendBuf));
     if (sockfd < 0) {
         perror("Error opening socket");
         return EXIT_FAILURE;
@@ -48,7 +51,7 @@ int main(int argc, const char **argv) {
             perror("Connection error");
             return EXIT_FAILURE;
         }
-        printf("Client FD: %d\n", clientfd);
+        //printf("Client FD: %d\n", clientfd);
         acceptClient(clientfd);
         printf("%d\n", i);
         i++;
@@ -58,7 +61,7 @@ int main(int argc, const char **argv) {
 
 void acceptClient(int clientfd) {
     pthread_attr_t t_attr;
-    printf("Client FD1: %d\n", clientfd);
+    //printf("Client FD1: %d\n", clientfd);
     pthread_attr_init(&t_attr);
     size_t stacksize = 85849014272;
     pthread_attr_setdetachstate(&t_attr, PTHREAD_CREATE_DETACHED);
