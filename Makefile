@@ -1,7 +1,7 @@
 SHELL := /bin/bash
 CC = gcc
 TARGET = server
-CFLAGS = -Wall -Wextra -ggdb -O0
+CFLAGS = -Wall -Wextra -ggdb -O2
 OBJS = main.o server.o
 all: $(TARGET)
 
