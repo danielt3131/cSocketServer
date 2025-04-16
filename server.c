@@ -13,8 +13,7 @@
 #include <sys/time.h>
 #include <sys/socket.h>
 
-
-void* serverThread(void* clientFd) {
+void* serverThread(int *clientFd, int workerID) {
     struct timespec start, end;
     clock_gettime(CLOCK_MONOTONIC, &start);
     //char buffer[BUFFER];
@@ -99,10 +98,10 @@ void* serverThread(void* clientFd) {
     //exit(EXIT_SUCCESS);
 
     clock_gettime(CLOCK_MONOTONIC, &end);
-    long elapsed_time_ms = (end.tv_sec - start.tv_sec) * 1000 +
-                            (end.tv_nsec - start.tv_nsec) / 1000000;
-
-    printf("Elapsed time: %ld ms\n", elapsed_time_ms);
+    // Save the thread's process time
+    //printf("%p\n", processTime);
+    processTime[workerID] = (end.tv_sec - start.tv_sec) * 1000 + (end.tv_nsec - start.tv_nsec) / 1000000;
+    printf("Worker %d elapsed time: %ld ms\n", workerID, processTime[workerID]);
     return NULL;
     //pthread_exit(NULL);
 }

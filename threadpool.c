@@ -8,10 +8,12 @@
 
 struct node* head = NULL;
 struct node* tail = NULL;
+int queueSize = 0;
 
 int* dequeue() {
    // printf("%p\n", head);
     if (head == NULL) {
+        queueSize = 0;
         return NULL;
     } else {
         int *result = head->clientfd;
@@ -22,6 +24,7 @@ int* dequeue() {
         }
         free(temp);
         //printf("%p\n", head);
+        queueSize--;
         return result;
     }
 }
@@ -36,7 +39,7 @@ void enqueue(int *clientfd) {
     } else {
         tail->next = newNode;
     }
-
+    queueSize++;
     tail = newNode;
 }
 
