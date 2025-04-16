@@ -1,8 +1,8 @@
 SHELL := /bin/bash
 CC = gcc
 TARGET = server
-CFLAGS = -Wall -Wextra -ggdb -O2
-OBJS = main.o server.o
+CFLAGS = -Wall -Wextra -ggdb -O2 
+OBJS = main.o server.o threadpool.o
 all: $(TARGET)
 
 $(TARGET) : $(OBJS)

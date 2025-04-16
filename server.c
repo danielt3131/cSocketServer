@@ -17,11 +17,11 @@
 void* serverThread(void* clientFd) {
     struct timespec start, end;
     clock_gettime(CLOCK_MONOTONIC, &start);
-    pthread_detach(pthread_self());
     //char buffer[BUFFER];
     //printf("ClientFD Address %p\n", clientFd);
     int clientfd = *(int *) clientFd;
-    char *buffer = clientFd;
+    free(clientFd);
+    char *buffer = malloc(BUFFER);
     //printf("Thread %lu\n", pthread_self());
     //printf("Client FD2: %d\n", clientfd);
     struct sysinfo info;
@@ -32,7 +32,6 @@ void* serverThread(void* clientFd) {
     read(clientfd, buffer, 2);
     int option = atoi(buffer);
     int length = 0;
-
     if (option == 1) {
         sprintf(buffer, "%lu\n", time(NULL));
         //write(clientfd, "Sun Feb 23 16:02:34 UTC 2025\n", 30);
@@ -95,14 +94,15 @@ void* serverThread(void* clientFd) {
     // Close the client socket
     //fclose(client);
     close(clientfd);
-
+    free(buffer);
     puts("Closed connection\n");
     //exit(EXIT_SUCCESS);
-    free(clientFd);
+
     clock_gettime(CLOCK_MONOTONIC, &end);
     long elapsed_time_ms = (end.tv_sec - start.tv_sec) * 1000 +
                             (end.tv_nsec - start.tv_nsec) / 1000000;
 
     printf("Elapsed time: %ld ms\n", elapsed_time_ms);
-    pthread_exit(NULL);
+    return NULL;
+    //pthread_exit(NULL);
 }
