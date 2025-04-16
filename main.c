@@ -126,6 +126,9 @@ int main(int argc, const char **argv) {
 }
 
 void *worker(void * arg) {
+    if (arg == NULL) {
+        pthread_exit(NULL);
+    }
     int workerID = *(int *) arg;
     free(arg);
     nice(-15);
@@ -196,6 +199,7 @@ void removeAdditionalWorkers(int flag) {
     puts("Removing additional workers\n");
     for (int i = numThreads - 1; i >= targetAmount; i--) {
         pthread_cancel(threadPool[i]);
+        pthread_join(threadPool[i], NULL);
         processTime[i] = 0;
     }
     numThreads = targetAmount;
@@ -209,7 +213,7 @@ void removeAdditionalWorkers(int flag) {
 
 void *processCheckWorker(void *arg) {
     while (true) {
-        //usleep(250000);
+        usleep(250000);
         if (processTimeChecker()) {
             printf("%d workers\n", numThreads);
             createAdditionalWorkers();
