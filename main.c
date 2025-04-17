@@ -272,7 +272,7 @@ void *processCheckWorker(void *arg) {
             printf("%d workers\n", numThreads);
             createAdditionalWorkers();
             printf("%d workers\n", numThreads);
-            usleep(200000);
+            //usleep(200000);
         }
         if (queueSize == 0 && numThreads > INIT_THREAD_POOL_SIZE) {
             removeAdditionalWorkers(QUEUE_EMPTY);
