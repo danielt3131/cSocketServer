@@ -80,7 +80,7 @@ int main(int argc, const char **argv) {
     /**
      * Creates thread pool
      */
-    pthread_t *threadPool = malloc(INIT_THREAD_POOL_SIZE * sizeof(pthread_t));
+    threadPool = malloc(INIT_THREAD_POOL_SIZE * sizeof(pthread_t));
     processTime = malloc(INIT_THREAD_POOL_SIZE * sizeof(long));
     //printf("%p\n", processTime);
     if (threadPool == NULL) {
