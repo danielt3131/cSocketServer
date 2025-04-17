@@ -8,7 +8,7 @@
 #include <stdbool.h>
 #include <netinet/tcp.h>
 #include <unistd.h>
-
+#include <errno.h>
 #include "threadpool.h"
 #include "server.h"
 
@@ -16,14 +16,16 @@
 #define WAIT_TIME 100
 #define WORKER_DELAY 1
 #define QUEUE_EMPTY 2
-#define POOL_FREE_TARGET 50
-#define MAX_PROCESS_TIME 500
+#define POOL_FREE_TARGET 10
+#define MAX_PROCESS_TIME 200
 
 pthread_mutex_t mutex = PTHREAD_MUTEX_INITIALIZER;
+pthread_mutex_t timeMutex = PTHREAD_MUTEX_INITIALIZER;
 pthread_t *threadPool;
 pthread_cond_t cond = PTHREAD_COND_INITIALIZER;
 
 long *processTime;
+bool *workerStatus;
 int numThreads = INIT_THREAD_POOL_SIZE;
 int poolAllocationAmount = INIT_THREAD_POOL_SIZE;
 void *worker(void * arg);
@@ -82,7 +84,8 @@ int main(int argc, const char **argv) {
      */
     threadPool = malloc(INIT_THREAD_POOL_SIZE * sizeof(pthread_t));
     processTime = malloc(INIT_THREAD_POOL_SIZE * sizeof(long));
-    //printf("%p\n", processTime);
+    workerStatus = malloc(INIT_THREAD_POOL_SIZE * sizeof(bool));
+    printf("Process Time: %p\n", processTime);
     if (threadPool == NULL) {
     	perror("Unable to create thread pool");
 
@@ -127,12 +130,18 @@ int main(int argc, const char **argv) {
 
 void *worker(void * arg) {
     if (arg == NULL) {
+        pthread_detach(pthread_self());
         pthread_exit(NULL);
     }
     int workerID = *(int *) arg;
     free(arg);
+    workerStatus[workerID] = true;
     nice(-15);
     while(true) {
+        if (!workerStatus[workerID]) {
+            printf("Thread ID: %lu", pthread_self());
+            pthread_exit(NULL);
+        }
         usleep(WAIT_TIME);
         int *client;
         pthread_setcancelstate(PTHREAD_CANCEL_DISABLE, NULL);
@@ -142,8 +151,6 @@ void *worker(void * arg) {
         pthread_mutex_unlock(&mutex);
         if (client != NULL) {
             serverThread(client, workerID);
-            pthread_setcancelstate(PTHREAD_CANCEL_ENABLE, NULL);
-        } else {
             pthread_setcancelstate(PTHREAD_CANCEL_ENABLE, NULL);
         }
     }
@@ -179,6 +186,8 @@ void createAdditionalWorkers() {
         printf("Pool %d\n", poolAllocationAmount);
         threadPool = realloc(threadPool, poolAllocationAmount * sizeof(pthread_t));
         processTime = realloc(processTime, poolAllocationAmount * sizeof(long));
+        workerStatus = realloc(workerStatus, poolAllocationAmount * sizeof(bool));
+	    printf("Realloc %p | %p\n", threadPool, processTime);
     }
     for (int i = origNumThreads; i < numThreads; i++) {
         int *workerID = malloc(sizeof(int));
@@ -189,25 +198,39 @@ void createAdditionalWorkers() {
 }
 // Remove some additional workers if the average processing time goes above 200ms or if queue is empty
 void removeAdditionalWorkers(int flag) {
-    int targetAmount = INIT_THREAD_POOL_SIZE;
+    int targetAmount;
     if (flag == QUEUE_EMPTY) {
-        createWorkerFreeze = false;
+        targetAmount = INIT_THREAD_POOL_SIZE;
+	    createWorkerFreeze = false;
     } else {
         targetAmount = numThreads - 5;
         createWorkerFreeze = true;  // Don't create anymore workers until queue is cleared
     }
+    void *status;
+    printf("Worker target amount: %d | %d\n", targetAmount, numThreads);
     puts("Removing additional workers\n");
     for (int i = numThreads - 1; i >= targetAmount; i--) {
-        pthread_cancel(threadPool[i]);
-        pthread_join(threadPool[i], NULL);
+        workerStatus[i] = false;
+        int result = pthread_join(threadPool[i], &status);
+        if (result != 0) {
+            perror(strerror(errno));
+        }
+        else {
+            perror("Thread Error\n");
+        }
+        printf("Old Worker %d Process Time: %p\n", i, &processTime[i]);
         processTime[i] = 0;
     }
     numThreads = targetAmount;
     // Reclaim some of the pool's memory if there is an excessive amount allocated.
     if (poolAllocationAmount > POOL_FREE_TARGET) {
         poolAllocationAmount = POOL_FREE_TARGET;
+        //pthread_mutex_lock(&timeMutex);
         threadPool = realloc(threadPool, poolAllocationAmount * sizeof(pthread_t));
         processTime = realloc(processTime, poolAllocationAmount * sizeof(long));
+        workerStatus = realloc(workerStatus, poolAllocationAmount * sizeof(bool));
+        //pthread_mutex_unlock(&timeMutex);
+	printf("Realloc Shrink %p | %p\n", threadPool, processTime);
     }
 }
 

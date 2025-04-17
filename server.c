@@ -99,9 +99,13 @@ void* serverThread(int *clientFd, int workerID) {
 
     clock_gettime(CLOCK_MONOTONIC, &end);
     // Save the thread's process time
+    printf("ProcessTime %d Worker address %p\n", workerID, &processTime[workerID]);
     //printf("%p\n", processTime);
-    processTime[workerID] = (end.tv_sec - start.tv_sec) * 1000 + (end.tv_nsec - start.tv_nsec) / 1000000;
-    printf("Worker %d elapsed time: %ld ms\n", workerID, processTime[workerID]);
+    long time = (end.tv_sec - start.tv_sec) * 1000 + (end.tv_nsec - start.tv_nsec) / 1000000;
+   // pthread_mutex_lock(&timeMutex);
+    processTime[workerID] = time;
+    //pthread_mutex_unlock(&timeMutex);
+    printf("Worker %d elapsed time: %ld ms\n", workerID, time);
     return NULL;
     //pthread_exit(NULL);
 }
