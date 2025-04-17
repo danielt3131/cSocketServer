@@ -16,7 +16,7 @@
 #define WAIT_TIME 100
 #define WORKER_DELAY 1
 #define QUEUE_EMPTY 2
-#define POOL_FREE_TARGET 10
+#define POOL_FREE_TARGET 50
 #define MAX_PROCESS_TIME 200
 
 pthread_mutex_t mutex = PTHREAD_MUTEX_INITIALIZER;
@@ -140,6 +140,7 @@ void *worker(void * arg) {
     while(true) {
         if (!workerStatus[workerID]) {
             printf("Thread ID: %lu", pthread_self());
+            //pthread_detach(pthread_self());
             pthread_exit(NULL);
         }
         usleep(WAIT_TIME);
@@ -161,6 +162,10 @@ bool processTimeChecker() {
         long result = 0;
         for (int i = 0; i < numThreads; i++) {
             result += processTime[i];
+        }
+        if (numThreads == 0) {
+            perror("Divde by zero\n");
+            return true;
         }
         result = result / numThreads;  // Calculate average
         printf("Average Time %ld\n", result);
@@ -204,6 +209,9 @@ void removeAdditionalWorkers(int flag) {
 	    createWorkerFreeze = false;
     } else {
         targetAmount = numThreads - 5;
+        if (numThreads == 5) {
+            return;
+        }
         createWorkerFreeze = true;  // Don't create anymore workers until queue is cleared
     }
     void *status;
@@ -211,6 +219,7 @@ void removeAdditionalWorkers(int flag) {
     puts("Removing additional workers\n");
     for (int i = numThreads - 1; i >= targetAmount; i--) {
         workerStatus[i] = false;
+
         int result = pthread_join(threadPool[i], &status);
         if (result != 0) {
             perror(strerror(errno));
@@ -218,12 +227,13 @@ void removeAdditionalWorkers(int flag) {
         else {
             perror("Thread Error\n");
         }
-        printf("Old Worker %d Process Time: %p\n", i, &processTime[i]);
+
+        //printf("Old Worker %d Process Time: %p\n", i, &processTime[i]);
         processTime[i] = 0;
     }
     numThreads = targetAmount;
     // Reclaim some of the pool's memory if there is an excessive amount allocated.
-    if (poolAllocationAmount > POOL_FREE_TARGET) {
+    if ((poolAllocationAmount > POOL_FREE_TARGET && numThreads < POOL_FREE_TARGET) || flag == QUEUE_EMPTY) {
         poolAllocationAmount = POOL_FREE_TARGET;
         //pthread_mutex_lock(&timeMutex);
         threadPool = realloc(threadPool, poolAllocationAmount * sizeof(pthread_t));

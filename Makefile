@@ -1,7 +1,7 @@
 SHELL := /bin/bash
 CC = gcc
 TARGET = server
-CFLAGS = -Wall -Wextra -ggdb -O2 
+CFLAGS = -Wall -Wextra -ggdb -O0 -fno-omit-frame-pointer
 OBJS = main.o server.o threadpool.o
 all: $(TARGET)
 
