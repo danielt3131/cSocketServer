@@ -128,6 +128,12 @@ int main(int argc, const char **argv) {
     return EXIT_SUCCESS;
 }
 
+/**
+ * Thread runs forever unless it's no longer needed
+ * Checks the queue for a client's fd
+ * @param arg The worker ID
+ * @return
+ */
 void *worker(void * arg) {
     if (arg == NULL) {
         pthread_detach(pthread_self());
@@ -157,6 +163,10 @@ void *worker(void * arg) {
     }
 }
 
+/**
+ * Computes the average response time across the threads
+ * @return True if more processes can be created if the average computed time is less than MAX_PROCESS_TIME
+ */
 bool processTimeChecker() {
     if (queueSize > 50) {
         long result = 0;
@@ -181,6 +191,9 @@ bool processTimeChecker() {
     return false;
 }
 
+/**
+ * Creates additional workers if capacity is available
+ */
 void createAdditionalWorkers() {
     int origNumThreads = numThreads;
     puts("Creating additional workers\n");
@@ -201,7 +214,10 @@ void createAdditionalWorkers() {
         processTime[i] = 0;
     }
 }
-// Remove some additional workers if the average processing time goes above 200ms or if queue is empty
+
+/**
+ * Remove some additional workers if the average processing time goes above 200ms or if queue is empty
+ */
 void removeAdditionalWorkers(int flag) {
     int targetAmount;
     if (flag == QUEUE_EMPTY) {
@@ -244,6 +260,11 @@ void removeAdditionalWorkers(int flag) {
     }
 }
 
+/**
+ * Separate thread responsible for determining if more workers can be created
+ * @param arg Nothing
+ * @return
+ */
 void *processCheckWorker(void *arg) {
     while (true) {
         usleep(250000);

@@ -13,6 +13,12 @@
 #include <sys/time.h>
 #include <sys/socket.h>
 
+/**
+ * Handles a connection from a client
+ * @param The pointer to the client's fd
+ * @param workerID The id of the worker responsible for the connection
+ * @return NULL
+ */
 void* serverThread(int *clientFd, int workerID) {
     struct timespec start, end;
     clock_gettime(CLOCK_MONOTONIC, &start);

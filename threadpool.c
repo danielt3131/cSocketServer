@@ -10,6 +10,10 @@ struct node* head = NULL;
 struct node* tail = NULL;
 int queueSize = 0;
 
+/**
+ * Removes a client from the queue
+ * @return The pointer to the client's fd
+ */
 int* dequeue() {
    // printf("%p\n", head);
     if (head == NULL) {
@@ -29,6 +33,10 @@ int* dequeue() {
     }
 }
 
+/**
+ * Adds a client to the queue
+ * @param clientfd The pointer to the client's fd
+ */
 void enqueue(int *clientfd) {
     struct node* newNode = malloc(sizeof(struct node));
     //printf("%p | %p\n", tail, newNode);
