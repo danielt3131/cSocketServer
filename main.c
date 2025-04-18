@@ -12,11 +12,30 @@
 #include "threadpool.h"
 #include "server.h"
 
+/**
+ * The initial amount of workers 
+ */
 #define INIT_THREAD_POOL_SIZE 5
+
+/**
+ * The amount of time in nanoseconds that the worker waits to check the queue
+ */
 #define WAIT_TIME 100
+/**
+ * Flag for the function removeAdditionalWorkers()
+ */
 #define WORKER_DELAY 1
+/**
+ * Flag for the function removeAdditionalWorkers()
+ */
 #define QUEUE_EMPTY 2
+/**
+ * How many workers should be kept allocated to reduce the amount of allocation calls
+ */
 #define POOL_FREE_TARGET 50
+/**
+ * The maximum average time to process client requests for creating additional workers
+ */
 #define MAX_PROCESS_TIME 200
 
 pthread_mutex_t mutex = PTHREAD_MUTEX_INITIALIZER;
