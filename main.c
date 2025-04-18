@@ -20,7 +20,7 @@
 #define MAX_PROCESS_TIME 200
 
 pthread_mutex_t mutex = PTHREAD_MUTEX_INITIALIZER;
-pthread_mutex_t timeMutex = PTHREAD_MUTEX_INITIALIZER;
+//pthread_mutex_t timeMutex = PTHREAD_MUTEX_INITIALIZER;
 pthread_t *threadPool;
 pthread_cond_t cond = PTHREAD_COND_INITIALIZER;
 
@@ -249,7 +249,7 @@ void removeAdditionalWorkers(int flag) {
     }
     numThreads = targetAmount;
     // Reclaim some of the pool's memory if there is an excessive amount allocated.
-    if ((poolAllocationAmount > POOL_FREE_TARGET && numThreads < POOL_FREE_TARGET) || flag == QUEUE_EMPTY) {
+    if (poolAllocationAmount > POOL_FREE_TARGET && numThreads < POOL_FREE_TARGET) {
         poolAllocationAmount = POOL_FREE_TARGET;
         //pthread_mutex_lock(&timeMutex);
         threadPool = realloc(threadPool, poolAllocationAmount * sizeof(pthread_t));
@@ -266,7 +266,8 @@ void removeAdditionalWorkers(int flag) {
  * @return
  */
 void *processCheckWorker(void *arg) {
-    while (true) {
+   int i = 0; 
+   while (true) {
         usleep(250000);
         if (processTimeChecker()) {
             printf("%d workers\n", numThreads);
@@ -275,8 +276,12 @@ void *processCheckWorker(void *arg) {
             //usleep(200000);
         }
         if (queueSize == 0 && numThreads > INIT_THREAD_POOL_SIZE) {
-            removeAdditionalWorkers(QUEUE_EMPTY);
-            printf("%d workers\n", numThreads);
+            i++;
         }
+	if (i > 8) {
+	    removeAdditionalWorkers(QUEUE_EMPTY);
+	    printf("%d workers\n", numThreads);
+	    i = 0;
+	}
     }
 }
